@@ -61,6 +61,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletedMediaIds, setDeletedMediaIds] = useState<number[]>([]);
 
   // Загружаем справочные данные при открытии модального окна
   useEffect(() => {
@@ -90,6 +91,17 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
       });
     }
   }, [product, isOpen]);
+
+  // Обновляем форму при изменении currentProduct в store (например, после удаления медиафайла)
+  useEffect(() => {
+    if (productStore.currentProduct && isOpen && productStore.currentProduct.id === product?.id) {
+      setFormData(prev => ({
+        ...prev,
+        // Обновляем только медиафайлы, остальные поля оставляем как есть
+        // Это позволяет сохранить изменения пользователя в форме
+      }));
+    }
+  }, [productStore.currentProduct, isOpen, product?.id]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -186,13 +198,20 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
         formDataToSend.append('media', file);
       });
 
+      // Добавляем список удаленных медиафайлов
+      if (deletedMediaIds.length > 0) {
+        formDataToSend.append('deletedMediaIds', JSON.stringify(deletedMediaIds));
+      }
+
       // Логируем отправляемые данные для отладки
       console.log('Sending update data:', {
         productId: product.id,
         sizeIds: formData.sizeIds,
         colorIds: formData.colorIds,
+        deletedMediaIds: deletedMediaIds,
         sizeIdsString: JSON.stringify(formData.sizeIds),
-        colorIdsString: JSON.stringify(formData.colorIds)
+        colorIdsString: JSON.stringify(formData.colorIds),
+        deletedMediaIdsString: JSON.stringify(deletedMediaIds)
       });
 
       await productStore.updateProduct(product.id, formDataToSend);
@@ -223,24 +242,30 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
         mediaFiles: []
       });
       setErrors({});
+      setDeletedMediaIds([]);
       onClose();
     }
   };
 
-  const handleDeleteMedia = async (mediaId: number) => {
-    if (!product) return;
+  const handleDeleteMedia = (mediaId: number) => {
+    // Подтверждение удаления
+    const confirmed = window.confirm('Вы уверены, что хотите удалить этот медиафайл? Это действие нельзя отменить.');
+    if (!confirmed) return;
     
-    try {
-      await productStore.deleteProductMedia(product.id, mediaId);
-      onSuccess?.(); // Обновляем данные
-    } catch (error) {
-      console.error('Ошибка удаления медиафайла:', error);
-    }
+    // Добавляем медиафайл в список удаленных
+    setDeletedMediaIds(prev => [...prev, mediaId]);
   };
 
   if (!product) {
     return null;
   }
+
+  // Получаем актуальные медиафайлы из store или из пропсов, исключая удаленные
+  const allMediaFiles = productStore.currentProduct?.id === product.id 
+    ? productStore.currentProduct.mediaFiles 
+    : product.mediaFiles;
+  
+  const currentMediaFiles = allMediaFiles?.filter(media => !deletedMediaIds.includes(media.id)) || [];
 
   return (
     <Modal 
@@ -400,9 +425,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Текущие медиафайлы</h3>
               
-              {product.mediaFiles && product.mediaFiles.length > 0 ? (
+              {currentMediaFiles && currentMediaFiles.length > 0 ? (
                 <div className="space-y-3">
-                  {product.mediaFiles.map((media) => (
+                  {currentMediaFiles.map((media) => (
                     <MediaPreview
                       key={media.id}
                       media={media}

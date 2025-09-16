@@ -6,13 +6,14 @@ import {
   useDisclosure
 } from '@heroui/react';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
-import { AddProductModal, ProductsTable, EditProductModal } from '@/components/ProductsPageComponents';
+import { AddProductModal, ProductsTable, EditProductModal, ViewProductModal } from '@/components/ProductsPageComponents';
 import type { Product } from '@/types/types';
 
 const ProductsPage = observer(() => {
   const { user, product } = useContext(Context) as IStoreContext;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
+  const { isOpen: isViewOpen, onOpen: onViewOpen, onOpenChange: onViewOpenChange } = useDisclosure();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
@@ -28,12 +29,8 @@ const ProductsPage = observer(() => {
         onEditOpen();
         break;
       case 'view':
-        console.log('Просмотр продукта:', productItem.id);
-        // TODO: Реализовать просмотр
-        break;
-      case 'media':
-        console.log('Управление медиафайлами:', productItem.id);
-        // TODO: Реализовать управление медиафайлами
+        setSelectedProduct(productItem);
+        onViewOpen();
         break;
       case 'delete':
         if (confirm(`Вы уверены, что хотите удалить продукт "${productItem.name}"?`)) {
@@ -95,6 +92,12 @@ const ProductsPage = observer(() => {
         onClose={onEditOpenChange}
         product={selectedProduct}
         onSuccess={handleProductUpdated}
+      />
+
+      <ViewProductModal
+        isOpen={isViewOpen}
+        onClose={onViewOpenChange}
+        product={selectedProduct}
       />
     </div>
   );

@@ -64,8 +64,8 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
             <Button
               size="sm"
               color="danger"
-              variant="flat"
-              className="absolute top-2 right-2"
+              variant="solid"
+              className="absolute top-2 right-2 z-10 min-w-8 h-8 p-0"
               onPress={() => onDelete(media.id)}
             >
               ✕

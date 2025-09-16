@@ -39,12 +39,6 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product, onAction }) =>
           Просмотр
         </DropdownItem>
         <DropdownItem 
-          key="media" 
-          onPress={() => handleAction('media')}
-        >
-          Медиафайлы
-        </DropdownItem>
-        <DropdownItem 
           key="delete" 
           className="text-danger" 
           color="danger"
