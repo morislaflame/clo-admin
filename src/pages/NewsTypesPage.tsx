@@ -1,33 +1,101 @@
 import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner,
-  Alert
-} from '@heroui/react';
+import { Spinner, Alert } from '@heroui/react';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
+import {
+  NewsTypesHeader,
+  NewsTypesTable,
+  CreateNewsTypeModal,
+  EditNewsTypeModal
+} from '@/components/NewsTypesPageComponents';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import type { NewsType } from '@/types/types';
 
 const NewsTypesPage = observer(() => {
   const { user, newsType } = useContext(Context) as IStoreContext;
+  
+  // Состояния для модалок
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  
+  // Состояния для выбранного типа новости
+  const [selectedNewsType, setSelectedNewsType] = React.useState<NewsType | null>(null);
+  const [deletingNewsType, setDeletingNewsType] = React.useState<NewsType | null>(null);
+  
+  // Состояния для формы создания/редактирования
+  const [name, setName] = React.useState('');
+  const [description, setDescription] = React.useState('');
 
   useEffect(() => {
     if (user.isAuth) {
       newsType.fetchNewsTypes();
     }
-  }, [user.isAuth]);
+  }, [user.isAuth, newsType]);
+
+  // Обработчики действий
+  const handleCreateNewsType = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleEditNewsType = (newsTypeItem: NewsType) => {
+    setSelectedNewsType(newsTypeItem);
+    setName(newsTypeItem.name);
+    setDescription(newsTypeItem.description || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteNewsType = (newsTypeItem: NewsType) => {
+    setDeletingNewsType(newsTypeItem);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingNewsType) return;
+    
+    try {
+      await newsType.deleteNewsType(deletingNewsType.id);
+      setIsDeleteModalOpen(false);
+      setDeletingNewsType(null);
+    } catch (error) {
+      console.error('Error deleting news type:', error);
+    }
+  };
+
+  const handleCreateNewsTypeSubmit = async () => {
+    try {
+      await newsType.createNewsType({ 
+        name: name.trim(), 
+        description: description.trim() || undefined 
+      });
+      
+      // Сброс формы
+      setName('');
+      setDescription('');
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Error creating news type:', error);
+    }
+  };
+
+  const handleEditNewsTypeSubmit = async () => {
+    if (!selectedNewsType) return;
+    
+    try {
+      await newsType.updateNewsType(selectedNewsType.id, { 
+        name: name.trim(), 
+        description: description.trim() || undefined 
+      });
+      
+      // Сброс формы
+      setName('');
+      setDescription('');
+      setSelectedNewsType(null);
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating news type:', error);
+    }
+  };
 
   if (!user.isAuth) {
     return (
@@ -41,12 +109,10 @@ const NewsTypesPage = observer(() => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Управление типами новостей</h1>
-        <Button color="primary" size="lg">
-          Создать тип
-        </Button>
-      </div>
+      <NewsTypesHeader
+        onCreateNewsType={handleCreateNewsType}
+        isLoading={newsType.loading}
+      />
 
       {newsType.loading ? (
         <div className="flex justify-center items-center h-64">
@@ -57,58 +123,46 @@ const NewsTypesPage = observer(() => {
           {newsType.error || 'Ошибка загрузки типов новостей'}
         </Alert>
       ) : (
-        <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold">Список типов новостей</h2>
-          </CardHeader>
-          <CardBody>
-            <Table aria-label="News types table">
-              <TableHeader>
-                <TableColumn>ID</TableColumn>
-                <TableColumn>Название</TableColumn>
-                <TableColumn>Описание</TableColumn>
-                <TableColumn>Дата создания</TableColumn>
-                <TableColumn>Действия</TableColumn>
-              </TableHeader>
-              <TableBody emptyContent="Типы новостей не найдены">
-                {newsType.newsTypes.map((newsType) => (
-                  <TableRow key={newsType.id}>
-                    <TableCell>{newsType.id}</TableCell>
-                    <TableCell>
-                      <span className="font-medium">{newsType.name}</span>
-                    </TableCell>
-                    <TableCell>
-                      {newsType.description ? (
-                        <span className="text-default-600">{newsType.description}</span>
-                      ) : (
-                        <span className="text-default-400">Не указано</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(newsType.createdAt).toLocaleDateString('ru-RU')}
-                    </TableCell>
-                    <TableCell>
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button variant="light" size="sm">
-                            Действия
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu>
-                          <DropdownItem key="edit">Редактировать</DropdownItem>
-                          <DropdownItem key="delete" className="text-danger" color="danger">
-                            Удалить
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
+        <NewsTypesTable
+          newsTypes={newsType.newsTypes}
+          onEdit={handleEditNewsType}
+          onDelete={handleDeleteNewsType}
+        />
       )}
+
+      <CreateNewsTypeModal
+        isOpen={isCreateModalOpen}
+        onOpenChange={() => setIsCreateModalOpen(!isCreateModalOpen)}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        onCreateNewsType={handleCreateNewsTypeSubmit}
+        isLoading={newsType.loading}
+      />
+
+      <EditNewsTypeModal
+        isOpen={isEditModalOpen}
+        onOpenChange={() => setIsEditModalOpen(!isEditModalOpen)}
+        newsType={selectedNewsType}
+        name={name}
+        setName={setName}
+        description={description}
+        setDescription={setDescription}
+        onSave={handleEditNewsTypeSubmit}
+        isLoading={newsType.loading}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={() => setIsDeleteModalOpen(!isDeleteModalOpen)}
+        title="Удалить тип новости"
+        itemName={deletingNewsType?.name || ''}
+        itemDetails={deletingNewsType ? `ID: ${deletingNewsType.id} | Создан: ${new Date(deletingNewsType.createdAt).toLocaleDateString('ru-RU')}` : ''}
+        warningMessage="Если этот тип используется в новостях, удаление будет невозможно."
+        onConfirmDelete={handleConfirmDelete}
+        isLoading={newsType.loading}
+      />
     </div>
   );
 });
