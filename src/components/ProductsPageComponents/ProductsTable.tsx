@@ -10,7 +10,6 @@ import {
   TableRow,
   TableCell,
   Chip,
-  Badge,
   Spinner,
   Alert
 } from '@heroui/react';
@@ -98,9 +97,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
       <CardHeader>
         <div className="flex justify-between items-center w-full">
           <h2 className="text-lg font-semibold">Список продуктов</h2>
-          <Badge content={totalCount} color="primary" variant="flat">
-            <span className="text-sm text-default-500">Всего продуктов</span>
-          </Badge>
+          <span className="text-sm text-default-500">Всего продуктов <Chip variant="flat">{totalCount}</Chip></span>
         </div>
       </CardHeader>
       <CardBody>

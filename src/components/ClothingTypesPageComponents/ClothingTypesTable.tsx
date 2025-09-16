@@ -14,7 +14,7 @@ import {
   DropdownMenu,
   DropdownItem,
   Button,
-  Badge
+  Chip
 } from '@heroui/react';
 
 interface ClothingType {
@@ -39,9 +39,7 @@ const ClothingTypesTable: React.FC<ClothingTypesTableProps> = ({
       <CardHeader>
         <div className="flex justify-between items-center w-full">
           <h2 className="text-lg font-semibold">Список типов одежды</h2>
-          <Badge content={clothingTypes.length} color="primary" variant="flat">
-            <span className="text-sm text-default-500">Всего типов</span>
-          </Badge>
+          <span className="text-sm text-default-500">Всего типов <Chip variant="flat">{clothingTypes.length}</Chip></span>
         </div>
       </CardHeader>
       <CardBody>
