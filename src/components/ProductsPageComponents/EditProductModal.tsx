@@ -12,14 +12,17 @@ import {
   SelectItem,
   Chip,
   Alert,
-  Spinner
+  Spinner,
 } from '@heroui/react';
 import FileUpload from './FileUpload';
+import MediaPreview from './MediaPreview';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
+import type { Product } from '@/types/types';
 
-interface AddProductModalProps {
+interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
+  product: Product | null;
   onSuccess?: () => void;
 }
 
@@ -38,8 +41,8 @@ interface ProductFormData {
   mediaFiles: File[];
 }
 
-const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { product, clothingType, size, color } = useContext(Context) as IStoreContext;
+const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, product, onSuccess }) => {
+  const { product: productStore, clothingType, size, color } = useContext(Context) as IStoreContext;
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -67,6 +70,26 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
       color.fetchColors();
     }
   }, [isOpen, clothingType, size, color]);
+
+  // Заполняем форму данными продукта при открытии
+  useEffect(() => {
+    if (product && isOpen) {
+      setFormData({
+        name: product.name || '',
+        priceKZT: product.priceKZT?.toString() || '',
+        priceUSD: product.priceUSD?.toString() || '',
+        description: product.description || '',
+        color: product.color || '',
+        ingredients: product.ingredients || '',
+        gender: product.gender || 'MAN',
+        clothingTypeId: product.clothingTypeId?.toString() || '',
+        collectionId: product.collectionId?.toString() || '',
+        sizeIds: product.sizes?.map(size => size.id) || [],
+        colorIds: product.colors?.map(color => color.id) || [],
+        mediaFiles: []
+      });
+    }
+  }, [product, isOpen]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -128,7 +151,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
+    if (!product || !validateForm()) {
       return;
     }
 
@@ -154,42 +177,30 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
         formDataToSend.append('collectionId', formData.collectionId);
       }
 
-      // Добавляем размеры и цвета
-      if (formData.sizeIds.length > 0) {
-        formDataToSend.append('sizeIds', JSON.stringify(formData.sizeIds));
-      }
-      
-      if (formData.colorIds.length > 0) {
-        formDataToSend.append('colorIds', JSON.stringify(formData.colorIds));
-      }
+      // Добавляем размеры и цвета (всегда отправляем, даже пустые массивы)
+      formDataToSend.append('sizeIds', JSON.stringify(formData.sizeIds));
+      formDataToSend.append('colorIds', JSON.stringify(formData.colorIds));
 
-      // Добавляем медиафайлы
+      // Добавляем новые медиафайлы
       formData.mediaFiles.forEach(file => {
         formDataToSend.append('media', file);
       });
 
-      await product.createProduct(formDataToSend);
-      
-      // Сбрасываем форму
-      setFormData({
-        name: '',
-        priceKZT: '',
-        priceUSD: '',
-        description: '',
-        color: '',
-        ingredients: '',
-        gender: 'MAN',
-        clothingTypeId: '',
-        collectionId: '',
-        sizeIds: [],
-        colorIds: [],
-        mediaFiles: []
+      // Логируем отправляемые данные для отладки
+      console.log('Sending update data:', {
+        productId: product.id,
+        sizeIds: formData.sizeIds,
+        colorIds: formData.colorIds,
+        sizeIdsString: JSON.stringify(formData.sizeIds),
+        colorIdsString: JSON.stringify(formData.colorIds)
       });
+
+      await productStore.updateProduct(product.id, formDataToSend);
       
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Ошибка создания продукта:', error);
+      console.error('Ошибка обновления продукта:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -216,6 +227,21 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     }
   };
 
+  const handleDeleteMedia = async (mediaId: number) => {
+    if (!product) return;
+    
+    try {
+      await productStore.deleteProductMedia(product.id, mediaId);
+      onSuccess?.(); // Обновляем данные
+    } catch (error) {
+      console.error('Ошибка удаления медиафайла:', error);
+    }
+  };
+
+  if (!product) {
+    return null;
+  }
+
   return (
     <Modal 
       isOpen={isOpen} 
@@ -229,13 +255,14 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
-          <h2 className="text-xl font-semibold">Добавить новый продукт</h2>
+          <h2 className="text-xl font-semibold">Редактировать продукт</h2>
+          <p className="text-sm text-default-500">ID: {product.id}</p>
         </ModalHeader>
         
         <ModalBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Основная информация */}
-            <div className="space-y-4">
+            <div className="lg:col-span-2 space-y-4">
               <h3 className="text-lg font-medium">Основная информация</h3>
               
               <Input
@@ -278,7 +305,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 onChange={(e) => handleInputChange('gender', e.target.value as 'MAN' | 'WOMAN')}
                 isRequired
               >
-                <SelectItem key="MAN" >Мужской</SelectItem>
+                <SelectItem key="MAN">Мужской</SelectItem>
                 <SelectItem key="WOMAN">Женский</SelectItem>
               </Select>
 
@@ -289,7 +316,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 onChange={(e) => handleInputChange('clothingTypeId', e.target.value)}
               >
                 {clothingType.clothingTypes.map((type) => (
-                  <SelectItem key={type.id.toString()} >
+                  <SelectItem key={type.id.toString()}>
                     {type.name}
                   </SelectItem>
                 ))}
@@ -309,12 +336,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 value={formData.ingredients}
                 onChange={(e) => handleInputChange('ingredients', e.target.value)}
               />
-            </div>
 
-            {/* Размеры, цвета и медиафайлы */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Дополнительные параметры</h3>
-              
               {/* Размеры */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Размеры</label>
@@ -359,9 +381,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 </div>
               </div>
 
-              {/* Медиафайлы */}
+              {/* Новые медиафайлы */}
               <div>
-                <label className="text-sm font-medium mb-2 block">Медиафайлы</label>
+                <label className="text-sm font-medium mb-2 block">Добавить новые медиафайлы</label>
                 <FileUpload
                   accept="image/*,video/*"
                   multiple
@@ -373,11 +395,34 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 </p>
               </div>
             </div>
+
+            {/* Существующие медиафайлы */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Текущие медиафайлы</h3>
+              
+              {product.mediaFiles && product.mediaFiles.length > 0 ? (
+                <div className="space-y-3">
+                  {product.mediaFiles.map((media) => (
+                    <MediaPreview
+                      key={media.id}
+                      media={media}
+                      onDelete={handleDeleteMedia}
+                      showDeleteButton={true}
+                      size="md"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-default-500">
+                  <p>Нет медиафайлов</p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {product.error && (
+          {productStore.error && (
             <Alert color="danger" variant="flat" className="mt-4">
-              {product.error}
+              {productStore.error}
             </Alert>
           )}
         </ModalBody>
@@ -397,7 +442,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
             isLoading={isSubmitting}
             startContent={isSubmitting ? <Spinner size="sm" /> : null}
           >
-            {isSubmitting ? 'Создание...' : 'Создать продукт'}
+            {isSubmitting ? 'Сохранение...' : 'Сохранить изменения'}
           </Button>
         </ModalFooter>
       </ModalContent>
@@ -405,4 +450,4 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
   );
 };
 
-export default AddProductModal;
+export default EditProductModal;

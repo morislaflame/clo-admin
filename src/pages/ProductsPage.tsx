@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
   Button,
@@ -6,12 +6,14 @@ import {
   useDisclosure
 } from '@heroui/react';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
-import { AddProductModal, ProductsTable } from '@/components/ProductsPageComponents';
+import { AddProductModal, ProductsTable, EditProductModal } from '@/components/ProductsPageComponents';
 import type { Product } from '@/types/types';
 
 const ProductsPage = observer(() => {
   const { user, product } = useContext(Context) as IStoreContext;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     if (user.isAuth) {
@@ -22,8 +24,8 @@ const ProductsPage = observer(() => {
   const handleProductAction = (action: string, productItem: Product) => {
     switch (action) {
       case 'edit':
-        console.log('Редактировать продукт:', productItem.id);
-        // TODO: Реализовать редактирование
+        setSelectedProduct(productItem);
+        onEditOpen();
         break;
       case 'view':
         console.log('Просмотр продукта:', productItem.id);
@@ -46,6 +48,12 @@ const ProductsPage = observer(() => {
   const handleProductCreated = () => {
     // Обновляем список продуктов после создания
     product.fetchProducts();
+  };
+
+  const handleProductUpdated = () => {
+    // Обновляем список продуктов после редактирования
+    product.fetchProducts();
+    setSelectedProduct(null);
   };
 
   if (!user.isAuth) {
@@ -80,6 +88,13 @@ const ProductsPage = observer(() => {
         isOpen={isOpen}
         onClose={onOpenChange}
         onSuccess={handleProductCreated}
+      />
+
+      <EditProductModal
+        isOpen={isEditOpen}
+        onClose={onEditOpenChange}
+        product={selectedProduct}
+        onSuccess={handleProductUpdated}
       />
     </div>
   );

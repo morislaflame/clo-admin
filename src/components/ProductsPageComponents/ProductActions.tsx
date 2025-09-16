@@ -21,7 +21,7 @@ const ProductActions: React.FC<ProductActionsProps> = ({ product, onAction }) =>
   return (
     <Dropdown>
       <DropdownTrigger>
-        <Button variant="light" size="sm">
+        <Button variant="bordered" size="sm">
           Действия
         </Button>
       </DropdownTrigger>
