@@ -1,5 +1,5 @@
 import {makeAutoObservable, runInAction } from "mobx";
-import { fetchMyInfo, telegramAuth, check } from "@/http/userAPI";
+import { fetchMyInfo, telegramAuth, check, login } from "@/http/userAPI";
 import { type UserInfo } from "@/types/types";
 
 export default class UserStore {
@@ -40,8 +40,24 @@ export default class UserStore {
         this.serverErrorMessage = message;
     }
 
+    async login(email: string, password: string) {
+        try {
+            const data = await login(email, password);
+            runInAction(() => {
+                this.setUser(data as UserInfo);
+                this.setIsAuth(true);
+                this.setServerError(false);
+            });
+        } catch (error) {
+            console.error("Error during login:", error);
+            this.setServerError(true, 'Invalid credentials or server error');
+            throw error;
+        }
+    }
+
     async logout() {
         try {
+            localStorage.removeItem('token');
             this.setIsAuth(false);
             this.setUser(null);
         } catch (error) {

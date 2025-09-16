@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useTelegramApp } from '@/utils/useTelegramApp';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import Navigation from '@/components/Navigation';
 
 const AppRouter = lazy(() => import("@/router/AppRouter"));
 
@@ -67,10 +68,12 @@ const App = observer(() => {
 
   return (
       <BrowserRouter>
-        <div>
-            <Suspense fallback={<LoadingIndicator />}>
-              <AppRouter />
-            </Suspense>
+        <div className="min-h-screen bg-background">
+          {/* Показываем навигацию всегда */}
+          <Navigation />
+          <Suspense fallback={<LoadingIndicator />}>
+            <AppRouter />
+          </Suspense>
         </div>
       </BrowserRouter>
   )

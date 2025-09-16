@@ -1,9 +1,23 @@
 import { createContext, useState, useEffect, type ReactNode } from "react";
 import LoadingIndicator from "../components/LoadingIndicator";
 import UserStore from "@/store/UserStore";
+import NewsStore from "@/store/NewsStore";
+import NewsTypeStore from "@/store/NewsTypeStore";
+import TagStore from "@/store/TagStore";
+import ProductStore from "@/store/ProductStore";
+import ClothingTypeStore from "@/store/ClothingTypeStore";
+import ColorStore from "@/store/ColorStore";
+import SizeStore from "@/store/SizeStore";
 // Определяем интерфейс для нашего контекста
 export interface IStoreContext {
   user: UserStore;
+  news: NewsStore;
+  newsType: NewsTypeStore;
+  tag: TagStore;
+  product: ProductStore;
+  clothingType: ClothingTypeStore;
+  color: ColorStore;
+  size: SizeStore;
 }
 
 let storeInstance: IStoreContext | null = null;
@@ -27,18 +41,46 @@ interface StoreProviderProps {
 const StoreProvider = ({ children }: StoreProviderProps) => {
   const [stores, setStores] = useState<{
     user: UserStore;
+    news: NewsStore;
+    newsType: NewsTypeStore;
+    tag: TagStore;
+    product: ProductStore;
+    clothingType: ClothingTypeStore;
+    color: ColorStore;
+    size: SizeStore;
   } | null>(null);
 
   useEffect(() => {
     const loadStores = async () => {
       const [
         { default: UserStore },
+        { default: NewsStore },
+        { default: NewsTypeStore },
+        { default: TagStore },
+        { default: ProductStore },
+        { default: ClothingTypeStore },
+        { default: ColorStore },
+        { default: SizeStore },
       ] = await Promise.all([
         import("@/store/UserStore"),
+        import("@/store/NewsStore"),
+        import("@/store/NewsTypeStore"),
+        import("@/store/TagStore"),
+        import("@/store/ProductStore"),
+        import("@/store/ClothingTypeStore"),
+        import("@/store/ColorStore"),
+        import("@/store/SizeStore"),
       ]);
 
       setStores({
         user: new UserStore(),
+        news: new NewsStore(),
+        newsType: new NewsTypeStore(),
+        tag: new TagStore(),
+        product: new ProductStore(),
+        clothingType: new ClothingTypeStore(),
+        color: new ColorStore(),
+        size: new SizeStore(),
       });
     };
 
