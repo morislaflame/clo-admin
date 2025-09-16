@@ -1,44 +1,31 @@
 import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner,
-  Alert,
-  Badge,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Input,
-  useDisclosure
-} from '@heroui/react';
+import { Spinner, Alert } from '@heroui/react';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
+import {
+  ClothingTypesHeader,
+  ClothingTypesTable,
+  CreateClothingTypeModal,
+  EditClothingTypeModal
+} from '@/components/ClothingTypesPageComponents';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 const ClothingTypesPage = observer(() => {
   const { user, clothingType } = useContext(Context) as IStoreContext;
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [newTypeName, setNewTypeName] = React.useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [editingType, setEditingType] = React.useState<{ id: number; name: string; createdAt: string } | null>(null);
+  const [editedName, setEditedName] = React.useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false);
+  const [deletingType, setDeletingType] = React.useState<{ id: number; name: string; createdAt: string } | null>(null);
 
   useEffect(() => {
     if (user.isAuth) {
       clothingType.fetchClothingTypes();
       clothingType.fetchStatistics();
     }
-  }, [user.isAuth]);
+  }, [user.isAuth, clothingType]);
 
   const handleCreateType = async () => {
     if (!newTypeName.trim()) return;
@@ -46,7 +33,7 @@ const ClothingTypesPage = observer(() => {
     try {
       await clothingType.createClothingType({ name: newTypeName.trim() });
       setNewTypeName('');
-      onOpenChange();
+      setIsModalOpen(false);
     } catch (error) {
       console.error('Error creating clothing type:', error);
     }
@@ -57,6 +44,45 @@ const ClothingTypesPage = observer(() => {
       await clothingType.createDefaultClothingTypes();
     } catch (error) {
       console.error('Error creating default types:', error);
+    }
+  };
+
+  const handleEditType = (type: { id: number; name: string; createdAt: string }) => {
+    setEditingType(type);
+    setEditedName(type.name);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingType || !editedName.trim()) return;
+    
+    try {
+      await clothingType.updateClothingType(editingType.id, { name: editedName.trim() });
+      setIsEditModalOpen(false);
+      setEditingType(null);
+      setEditedName('');
+    } catch (error) {
+      console.error('Error updating clothing type:', error);
+    }
+  };
+
+  const handleDeleteType = (type: { id: number; name: string; createdAt: string }) => {
+    setDeletingType(type);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingType) return;
+    
+    try {
+      await clothingType.deleteClothingType(deletingType.id);
+      setIsDeleteModalOpen(false);
+      setDeletingType(null);
+      // Обновляем статистику после удаления
+      clothingType.fetchStatistics();
+    } catch (error) {
+      console.error('Error deleting clothing type:', error);
+      // Ошибка уже обработана в store, можно показать уведомление
     }
   };
 
@@ -72,23 +98,11 @@ const ClothingTypesPage = observer(() => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Управление типами одежды</h1>
-        <div className="flex gap-2">
-          <Button 
-            color="secondary" 
-            variant="flat" 
-            size="lg"
-            onClick={handleCreateDefaults}
-            isLoading={clothingType.loading}
-          >
-            Создать стандартные
-          </Button>
-          <Button color="primary" size="lg" onPress={onOpen}>
-            Создать тип
-          </Button>
-        </div>
-      </div>
+      <ClothingTypesHeader
+        onCreateDefaults={handleCreateDefaults}
+        onCreateType={() => setIsModalOpen(true)}
+        isLoading={clothingType.loading}
+      />
 
       {clothingType.loading ? (
         <div className="flex justify-center items-center h-64">
@@ -100,108 +114,43 @@ const ClothingTypesPage = observer(() => {
         </Alert>
       ) : (
         <div className="space-y-6">
-          {/* Статистика */}
-          {clothingType.statistics.length > 0 && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-lg font-semibold">Статистика по типам одежды</h2>
-              </CardHeader>
-              <CardBody>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {clothingType.statistics.map((stat) => (
-                    <div key={stat.id} className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-bold text-primary">{stat.productCount}</div>
-                      <div className="text-sm text-default-500 truncate">{stat.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
-          )}
-
-          {/* Список типов */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center w-full">
-                <h2 className="text-lg font-semibold">Список типов одежды</h2>
-                <Badge content={clothingType.clothingTypes.length} color="primary" variant="flat">
-                  <span className="text-sm text-default-500">Всего типов</span>
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <Table aria-label="Clothing types table">
-                <TableHeader>
-                  <TableColumn>ID</TableColumn>
-                  <TableColumn>Название</TableColumn>
-                  <TableColumn>Дата создания</TableColumn>
-                  <TableColumn>Действия</TableColumn>
-                </TableHeader>
-                <TableBody emptyContent="Типы одежды не найдены">
-                  {clothingType.clothingTypes.map((type) => (
-                    <TableRow key={type.id}>
-                      <TableCell>{type.id}</TableCell>
-                      <TableCell>
-                        <span className="font-medium">{type.name}</span>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(type.createdAt).toLocaleDateString('ru-RU')}
-                      </TableCell>
-                      <TableCell>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <Button variant="light" size="sm">
-                              Действия
-                            </Button>
-                          </DropdownTrigger>
-                          <DropdownMenu>
-                            <DropdownItem key="edit">Редактировать</DropdownItem>
-                            <DropdownItem key="delete" className="text-danger" color="danger">
-                              Удалить
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardBody>
-          </Card>
+          {/* <ClothingTypesStatistics statistics={clothingType.statistics} /> */}
+          <ClothingTypesTable
+            clothingTypes={clothingType.clothingTypes}
+            onEdit={handleEditType}
+            onDelete={handleDeleteType}
+          />
         </div>
       )}
 
-      {/* Модальное окно создания */}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Создать новый тип одежды</ModalHeader>
-              <ModalBody>
-                <Input
-                  label="Название типа"
-                  placeholder="Введите название типа одежды"
-                  value={newTypeName}
-                  onChange={(e) => setNewTypeName(e.target.value)}
-                  variant="bordered"
-                />
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Отмена
-                </Button>
-                <Button 
-                  color="primary" 
-                  onPress={handleCreateType}
-                  isDisabled={!newTypeName.trim()}
-                >
-                  Создать
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+      <CreateClothingTypeModal
+        isOpen={isModalOpen}
+        onOpenChange={() => setIsModalOpen(!isModalOpen)}
+        newTypeName={newTypeName}
+        setNewTypeName={setNewTypeName}
+        onCreateType={handleCreateType}
+      />
+
+      <EditClothingTypeModal
+        isOpen={isEditModalOpen}
+        onOpenChange={() => setIsEditModalOpen(!isEditModalOpen)}
+        clothingType={editingType}
+        editedName={editedName}
+        setEditedName={setEditedName}
+        onSave={handleSaveEdit}
+        isLoading={clothingType.loading}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={() => setIsDeleteModalOpen(!isDeleteModalOpen)}
+        title="Удалить тип одежды"
+        itemName={deletingType?.name || ''}
+        itemDetails={deletingType ? `ID: ${deletingType.id} | Создан: ${new Date(deletingType.createdAt).toLocaleDateString('ru-RU')}` : ''}
+        warningMessage="Если этот тип используется в продуктах, удаление будет невозможно."
+        onConfirmDelete={handleConfirmDelete}
+        isLoading={clothingType.loading}
+      />
     </div>
   );
 });

@@ -7,6 +7,7 @@ import {
 } from '@heroui/react';
 import { Context, type IStoreContext } from '@/store/StoreProvider';
 import { AddProductModal, ProductsTable, EditProductModal, ViewProductModal } from '@/components/ProductsPageComponents';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import type { Product } from '@/types/types';
 
 const ProductsPage = observer(() => {
@@ -14,7 +15,9 @@ const ProductsPage = observer(() => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
   const { isOpen: isViewOpen, onOpen: onViewOpen, onOpenChange: onViewOpenChange } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onOpenChange: onDeleteOpenChange } = useDisclosure();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     if (user.isAuth) {
@@ -33,9 +36,8 @@ const ProductsPage = observer(() => {
         onViewOpen();
         break;
       case 'delete':
-        if (confirm(`Вы уверены, что хотите удалить продукт "${productItem.name}"?`)) {
-          product.deleteProduct(productItem.id);
-        }
+        setDeletingProduct(productItem);
+        onDeleteOpen();
         break;
       default:
         console.log('Неизвестное действие:', action);
@@ -51,6 +53,18 @@ const ProductsPage = observer(() => {
     // Обновляем список продуктов после редактирования
     product.fetchProducts();
     setSelectedProduct(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingProduct) return;
+    
+    try {
+      await product.deleteProduct(deletingProduct.id);
+      onDeleteOpenChange();
+      setDeletingProduct(null);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
   };
 
   if (!user.isAuth) {
@@ -98,6 +112,17 @@ const ProductsPage = observer(() => {
         isOpen={isViewOpen}
         onClose={onViewOpenChange}
         product={selectedProduct}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteOpen}
+        onOpenChange={onDeleteOpenChange}
+        title="Удалить продукт"
+        itemName={deletingProduct?.name || ''}
+        itemDetails={deletingProduct ? `ID: ${deletingProduct.id} | Цена: ${deletingProduct.priceKZT} ₸` : ''}
+        warningMessage="Товар будет полностью удален из системы."
+        onConfirmDelete={handleConfirmDelete}
+        isLoading={product.loading}
       />
     </div>
   );
