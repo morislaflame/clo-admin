@@ -3,8 +3,7 @@ import type {
   Product, 
   ClothingType, 
   Color, 
-  Size,
-  MediaFile
+  Size
 } from "@/types/types";
 
 // Интерфейсы для продуктов
@@ -99,7 +98,7 @@ export const createDefaultClothingTypes = async (): Promise<{ message: string; c
   return data;
 };
 
-export const getClothingTypeStatistics = async (): Promise<any[]> => {
+export const getClothingTypeStatistics = async (): Promise<unknown[]> => {
   const { data } = await $host.get('api/clothing-type/statistics');
   return data;
 };
