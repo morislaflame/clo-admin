@@ -32,6 +32,9 @@ const NewsPage = observer(() => {
   const [status, setStatus] = React.useState('DRAFT');
   const [selectedNewsType, setSelectedNewsType] = React.useState('');
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+  const [mediaFiles, setMediaFiles] = React.useState<File[]>([]);
+  const [editMediaFiles, setEditMediaFiles] = React.useState<File[]>([]);
+  const [deletedMediaIds, setDeletedMediaIds] = React.useState<number[]>([]);
 
   useEffect(() => {
     if (user.isAuth) {
@@ -54,6 +57,8 @@ const NewsPage = observer(() => {
     setStatus(newsItem.status);
     setSelectedNewsType(newsItem.newsTypeId?.toString() || '');
     setSelectedTags(newsItem.tags?.map(tag => tag.id.toString()) || []);
+    setEditMediaFiles([]);
+    setDeletedMediaIds([]);
     setIsEditModalOpen(true);
   };
 
@@ -65,6 +70,13 @@ const NewsPage = observer(() => {
   const handleDeleteNews = (newsItem: News) => {
     setDeletingNews(newsItem);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteMedia = (mediaId: number) => {
+    const confirmed = window.confirm('Вы уверены, что хотите удалить этот медиафайл? Это действие нельзя отменить.');
+    if (!confirmed) return;
+    
+    setDeletedMediaIds(prev => [...prev, mediaId]);
   };
 
   const handleConfirmDelete = async () => {
@@ -89,6 +101,18 @@ const NewsPage = observer(() => {
       formData.append('newsTypeId', selectedNewsType);
       formData.append('tagIds', JSON.stringify(selectedTags.map(id => parseInt(id))));
 
+      // Добавляем медиафайлы
+      console.log('Media files to upload:', mediaFiles);
+      mediaFiles.forEach((file, index) => {
+        console.log(`Adding file ${index}:`, file.name, file.size, file.type);
+        formData.append('media', file);
+      });
+
+      console.log('FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
       await news.createNews(formData);
       
       // Сброс формы
@@ -98,6 +122,7 @@ const NewsPage = observer(() => {
       setStatus('DRAFT');
       setSelectedNewsType('');
       setSelectedTags([]);
+      setMediaFiles([]);
       setIsCreateModalOpen(false);
     } catch (error) {
       console.error('Error creating news:', error);
@@ -116,6 +141,16 @@ const NewsPage = observer(() => {
       formData.append('newsTypeId', selectedNewsType);
       formData.append('tagIds', JSON.stringify(selectedTags.map(id => parseInt(id))));
 
+      // Добавляем новые медиафайлы
+      editMediaFiles.forEach((file) => {
+        formData.append('media', file);
+      });
+
+      // Добавляем список удаленных медиафайлов
+      if (deletedMediaIds.length > 0) {
+        formData.append('deletedMediaIds', JSON.stringify(deletedMediaIds));
+      }
+
       await news.updateNews(selectedNews.id, formData);
       
       // Сброс формы
@@ -125,6 +160,8 @@ const NewsPage = observer(() => {
       setStatus('DRAFT');
       setSelectedNewsType('');
       setSelectedTags([]);
+      setEditMediaFiles([]);
+      setDeletedMediaIds([]);
       setSelectedNews(null);
       setIsEditModalOpen(false);
     } catch (error) {
@@ -183,6 +220,8 @@ const NewsPage = observer(() => {
         setContent={setContent}
         status={status}
         setStatus={setStatus}
+        mediaFiles={mediaFiles}
+        setMediaFiles={setMediaFiles}
         onCreateNews={handleCreateNewsSubmit}
         isLoading={news.loading}
       />
@@ -205,6 +244,10 @@ const NewsPage = observer(() => {
         setContent={setContent}
         status={status}
         setStatus={setStatus}
+        editMediaFiles={editMediaFiles}
+        setEditMediaFiles={setEditMediaFiles}
+        deletedMediaIds={deletedMediaIds}
+        onDeleteMedia={handleDeleteMedia}
         onSave={handleEditNewsSubmit}
         isLoading={news.loading}
       />

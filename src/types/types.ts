@@ -124,6 +124,8 @@ export interface Collection {
     description?: string;
     createdAt: string;
     updatedAt: string;
+    products?: Product[];
+    mediaFiles?: MediaFile[];
 }
 
 export interface Size {

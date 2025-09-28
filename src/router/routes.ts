@@ -6,6 +6,7 @@ import NewsPage from '@/pages/NewsPage';
 import TagsPage from '@/pages/TagsPage';
 import NewsTypesPage from '@/pages/NewsTypesPage';
 import ProductsPage from '@/pages/ProductsPage';
+import CollectionsPage from '@/pages/CollectionsPage';
 import ClothingTypesPage from '@/pages/ClothingTypesPage';
 import ColorsPage from '@/pages/ColorsPage';
 import SizesPage from '@/pages/SizesPage';
@@ -16,6 +17,7 @@ import {
   TAGS_ROUTE, 
   NEWS_TYPES_ROUTE,
   PRODUCTS_ROUTE,
+  COLLECTIONS_ROUTE,
   CLOTHING_TYPES_ROUTE,
   COLORS_ROUTE,
   SIZES_ROUTE
@@ -36,6 +38,7 @@ export const privateRoutes: Route[] = [
   { path: TAGS_ROUTE, Component: TagsPage },
   { path: NEWS_TYPES_ROUTE, Component: NewsTypesPage },
   { path: PRODUCTS_ROUTE, Component: ProductsPage },
+  { path: COLLECTIONS_ROUTE, Component: CollectionsPage },
   { path: CLOTHING_TYPES_ROUTE, Component: ClothingTypesPage },
   { path: COLORS_ROUTE, Component: ColorsPage },
   { path: SIZES_ROUTE, Component: SizesPage },

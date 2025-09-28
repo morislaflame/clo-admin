@@ -36,7 +36,8 @@ import {
   PRODUCTS_ROUTE,
   CLOTHING_TYPES_ROUTE,
   COLORS_ROUTE,
-  SIZES_ROUTE
+  SIZES_ROUTE,
+  COLLECTIONS_ROUTE
 } from "@/utils/consts";
 
 export const AdminLogo = () => {
@@ -75,6 +76,7 @@ const Navigation = observer(() => {
       hasDropdown: true,
       subItems: [
         { name: "Все продукты", href: PRODUCTS_ROUTE },
+        { name: "Коллекции", href: COLLECTIONS_ROUTE },
         { name: "Типы одежды", href: CLOTHING_TYPES_ROUTE },
         { name: "Цвета", href: COLORS_ROUTE },
         { name: "Размеры", href: SIZES_ROUTE },

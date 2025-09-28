@@ -12,6 +12,7 @@ import {
   Button,
   Chip
 } from '@heroui/react';
+import FileUpload from '../ProductsPageComponents/FileUpload';
 import type { NewsType, Tag } from '@/types/types';
 
 interface CreateNewsModalProps {
@@ -31,6 +32,8 @@ interface CreateNewsModalProps {
   setContent: (value: string) => void;
   status: string;
   setStatus: (value: string) => void;
+  mediaFiles: File[];
+  setMediaFiles: (value: File[]) => void;
   onCreateNews: () => void;
   isLoading?: boolean;
 }
@@ -52,6 +55,8 @@ const CreateNewsModal: React.FC<CreateNewsModalProps> = ({
   setContent,
   status,
   setStatus,
+  mediaFiles,
+  setMediaFiles,
   onCreateNews,
   isLoading = false
 }) => {
@@ -188,6 +193,20 @@ const CreateNewsModal: React.FC<CreateNewsModalProps> = ({
                     ))}
                   </Select>
                 </div>
+              </div>
+
+              {/* Загрузка медиафайлов */}
+              <div>
+                <label className="text-sm font-medium text-default-700 mb-2 block">
+                  Медиафайлы
+                </label>
+                <FileUpload
+                  accept="image/*,video/*"
+                  multiple={true}
+                  onChange={setMediaFiles}
+                  value={mediaFiles}
+                  maxFiles={10}
+                />
               </div>
             </ModalBody>
             <ModalFooter>
