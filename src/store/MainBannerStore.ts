@@ -1,5 +1,5 @@
 import { makeAutoObservable } from "mobx";
-import { mainBannerAPI, MainBanner, MainBannerResponse } from "@/http/mainBannerAPI";
+import { mainBannerAPI, type MainBanner, type MainBannerResponse } from "@/http/mainBannerAPI";
 
 export default class MainBannerStore {
   mainBanners: MainBanner[] = [];
