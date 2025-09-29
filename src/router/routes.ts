@@ -10,6 +10,7 @@ import CollectionsPage from '@/pages/CollectionsPage';
 import ClothingTypesPage from '@/pages/ClothingTypesPage';
 import ColorsPage from '@/pages/ColorsPage';
 import SizesPage from '@/pages/SizesPage';
+import MainBannersPage from '@/pages/MainBannersPage';
 import { 
   MAIN_ROUTE, 
   AUTH_ROUTE, 
@@ -20,7 +21,8 @@ import {
   COLLECTIONS_ROUTE,
   CLOTHING_TYPES_ROUTE,
   COLORS_ROUTE,
-  SIZES_ROUTE
+  SIZES_ROUTE,
+  MAIN_BANNERS_ROUTE
 } from '@/utils/consts';
 
 interface Route {
@@ -42,4 +44,5 @@ export const privateRoutes: Route[] = [
   { path: CLOTHING_TYPES_ROUTE, Component: ClothingTypesPage },
   { path: COLORS_ROUTE, Component: ColorsPage },
   { path: SIZES_ROUTE, Component: SizesPage },
+  { path: MAIN_BANNERS_ROUTE, Component: MainBannersPage },
 ];
