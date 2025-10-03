@@ -38,7 +38,8 @@ import {
   COLORS_ROUTE,
   SIZES_ROUTE,
   COLLECTIONS_ROUTE,
-  MAIN_BANNERS_ROUTE
+  MAIN_BANNERS_ROUTE,
+  ORDERS_ROUTE
 } from "@/utils/consts";
 
 export const AdminLogo = () => {
@@ -83,6 +84,7 @@ const Navigation = observer(() => {
         { name: "Размеры", href: SIZES_ROUTE },
       ]
     },
+    { name: "Заказы", href: ORDERS_ROUTE, hasDropdown: false },
     { name: "Главные баннеры", href: MAIN_BANNERS_ROUTE, hasDropdown: false },
     { 
       name: "Новости", 

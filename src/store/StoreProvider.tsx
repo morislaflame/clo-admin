@@ -10,6 +10,7 @@ import ColorStore from "@/store/ColorStore";
 import SizeStore from "@/store/SizeStore";
 import CollectionStore from "@/store/CollectionStore";
 import MainBannerStore from "@/store/MainBannerStore";
+import OrderStore from "@/store/OrderStore";
 // Определяем интерфейс для нашего контекста
 export interface IStoreContext {
   user: UserStore;
@@ -22,6 +23,7 @@ export interface IStoreContext {
   size: SizeStore;
   collection: CollectionStore;
   mainBanner: MainBannerStore;
+  order: OrderStore;
 }
 
 let storeInstance: IStoreContext | null = null;
@@ -54,6 +56,7 @@ const StoreProvider = ({ children }: StoreProviderProps) => {
     size: SizeStore;
     collection: CollectionStore;
     mainBanner: MainBannerStore;
+    order: OrderStore;
   } | null>(null);
 
   useEffect(() => {
@@ -69,6 +72,7 @@ const StoreProvider = ({ children }: StoreProviderProps) => {
         { default: SizeStore },
         { default: CollectionStore },
         { default: MainBannerStore },
+        { default: OrderStore },
       ] = await Promise.all([
         import("@/store/UserStore"),
         import("@/store/NewsStore"),
@@ -80,6 +84,7 @@ const StoreProvider = ({ children }: StoreProviderProps) => {
         import("@/store/SizeStore"),
         import("@/store/CollectionStore"),
         import("@/store/MainBannerStore"),
+        import("@/store/OrderStore"),
       ]);
 
       setStores({
@@ -93,6 +98,7 @@ const StoreProvider = ({ children }: StoreProviderProps) => {
         size: new SizeStore(),
         collection: new CollectionStore(),
         mainBanner: new MainBannerStore(),
+        order: new OrderStore(),
       });
     };
 

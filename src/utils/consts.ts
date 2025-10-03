@@ -10,3 +10,4 @@ export const CLOTHING_TYPES_ROUTE = '/clothing-types';
 export const COLORS_ROUTE = '/colors';
 export const SIZES_ROUTE = '/sizes';
 export const MAIN_BANNERS_ROUTE = '/main-banners';
+export const ORDERS_ROUTE = '/orders';
